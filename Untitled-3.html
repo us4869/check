@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7月のデート作戦</title>
+    <style>
+        /* 💡 彼女向けの可愛いデザインベース */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fff5f5; /* 薄いピンク */
+            color: #4a4a4a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .game-box {
+            width: 90%;
+            max-width: 480px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(255, 182, 193, 0.3);
+            border: 2px solid #ffe3e3;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .tag-area {
+            font-size: 13px;
+            color: #ff85a2;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .text-area {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: pre-wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .choice-btn {
+            background-color: #ffccd5;
+            color: #c94a65;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .choice-btn:hover {
+            background-color: #ffb3c1;
+            transform: translateY(-2px);
+        }
+
+        /* 💡 逃げるボタン専用の呪い */
+        .escape-active {
+            position: fixed !important;
+            z-index: 99999 !important;
+            transition: all 0.1s ease !important;
+            width: 180px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-box">
+        <div class="tag-area" id="tag-text">💖 SPECIAL QUESTION 💖</div>
+        <div class="text-area" id="main-text">読み込み中...</div>
+        <div class="btn-group" id="btn-container"></div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 📂 1. 究極の2択 ＆ ドヤ顔の分岐データ
+        // ==========================================
+        const storyData = {
+            start: {
+                text: "ゆかちゃんにどうしても聞きたいことがあります。\n\n俺に対して「かっこいい」と思うか、「かわいい」と思うか、ぶっちゃけどっちの方が多い？🤔",
+                choices: [
+                    { text: "圧倒的にかっこいい！😎", nextNode: "cool_route" },
+                    { text: "かわいい🐶", nextNode: "cute_route" } // 💡 これが逃げ回る
+                ]
+            },
+            cool_route: {
+                text: "やっぱり？？？\nありがとう！！！\n\nいや〜、自分でも薄々そうだと思っててん。自覚はあったわ。言ってくれて嬉しい！",
+                choices: [
+                    { text: "調子乗んな笑", nextNode: "start" }
+                ]
+            },
+            // ※「かわいい」は実質押せないので、これは万が一をすり抜けた時用の隠し画面
+            cute_route: {
+                text: "あれ！？ボタン押せた！？！？\nそれはバグです、もう一回やり直してください。",
+                choices: [
+                    { text: "もう一度選択する", nextNode: "start" }
+                ]
+            },
+            
+            
+            
+        };
+
+        // ==========================================
+        // ⚙️ 2. 画面書き換え ＆ 「かわいい」を逃がす仕組み
+        // ==========================================
+        function updatePage(nodeKey) {
+            const currentNode = storyData[nodeKey];
+            const textElement = document.getElementById('main-text');
+            const btnContainer = document.getElementById('btn-container');
+
+            textElement.innerText = currentNode.text;
+            btnContainer.innerHTML = '';
+            
+            // 過去の逃げるスタイルをリセット
+            const oldStyle = document.getElementById('escape-style');
+            if (oldStyle) oldStyle.remove();
+
+            currentNode.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.innerText = choice.text;
+
+                // 💡 【ここが作戦の肝】ボタンの文字に「かわいい」が入っていたら絶対に押させない
+                if (choice.text.includes("かわいい")) {
+                    
+                    const style = document.createElement('style');
+                    style.id = 'escape-style';
+                    style.innerHTML = `
+                        .escape-active {
+                            position: fixed !important;
+                            z-index: 99999 !important;
+                            transition: all 0.1s ease !important;
+                            width: 220px !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    button.classList.add('escape-active');
+
+                    // 逃げるアクション（指が触れた瞬間 ＆ マウスが乗った瞬間）
+                    const escapeAction = (e) => {
+                        e.preventDefault(); 
+                        const randomX = Math.floor(Math.random() * 65) + 15; // 15%〜80%の間
+                        const randomY = Math.floor(Math.random() * 65) + 15;
+                        button.style.left = randomX + '%';
+                        button.style.top = randomY + '%';
+                    };
+
+                    button.addEventListener('mouseover', escapeAction);
+                    button.addEventListener('touchstart', escapeAction);
+
+                } else {
+                    // 普通のボタンの処理
+                    button.onclick = () => {
+                        updatePage(choice.nextNode);
+                    };
+                }
+
+                btnContainer.appendChild(button);
+            });
+        }
+
+        // スタート
+        updatePage('start');
+    </script>
+</body>
+</html>
